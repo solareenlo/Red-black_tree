@@ -6,7 +6,7 @@
 /*   By: tayamamo <tayamamo@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/03 12:30:05 by tayamamo          #+#    #+#             */
-/*   Updated: 2021/12/04 04:11:21 by tayamamo         ###   ########.fr       */
+/*   Updated: 2021/12/04 05:01:11 by tayamamo         ###   ########.fr       */
 /* ************************************************************************** */
 
 #ifndef RBTREE_HPP_
@@ -22,10 +22,10 @@ namespace ft {
 enum Color { kBLACK, kRED };
 
 template <typename T>
-struct rbnode {
-    rbnode*    parent;
-    rbnode*    left;
-    rbnode*    right;
+struct rbtNode {
+    rbtNode*   parent;
+    rbtNode*   left;
+    rbtNode*   right;
     enum Color color;
     T          key;
 };
@@ -39,16 +39,18 @@ class rbtree {
     rbtree& operator=(rbtree const& rhs);
 
  private:
-    rbnode<T>* root;
+    rbtNode<T>* m_root_;
 
-    rbnode<T>* createNewNode(T key);
-    void       inorderHelper(rbnode<T>* node) const;
-    void       preorderHelper(rbnode<T>* node) const;
-    void       postorderHelper(rbnode<T>* node) const;
-    void       rotateLeft(rbnode<T>* node);
-    void       rotateRight(rbnode<T>* node);
-    void       fixInsert(rbnode<T>* node);
-    void       fixDelete(rbnode<T>* node);
+    rbtNode<T>* createNewNode(T key);
+    void        deleteAllNode();
+    void        deleteAllNodeHelper(rbtNode<T>* node);
+    void        inorderHelper(rbtNode<T>* node) const;
+    void        preorderHelper(rbtNode<T>* node) const;
+    void        postorderHelper(rbtNode<T>* node) const;
+    void        rotateLeft(rbtNode<T>* node);
+    void        rotateRight(rbtNode<T>* node);
+    void        fixInsert(rbtNode<T>* node);
+    void        fixDelete(rbtNode<T>* node);
 
  public:
     void inorder() const;
@@ -59,40 +61,42 @@ class rbtree {
 };
 
 template <typename T>
-rbtree<T>::rbtree() : root(NIL) {}
+rbtree<T>::rbtree() : m_root_(NIL) {}
 
 template <typename T>
-rbtree<T>::~rbtree() {}
+rbtree<T>::~rbtree() {
+    deleteAllNode();
+}
 
 template <typename T>
-rbtree<T>::rbtree(rbtree const& src) : root(new rbtree) {
-    root->parent = src->parent;
-    root->left = src->left;
-    root->right = src->right;
-    root->color = src->color;
-    root->key = src->key;
+rbtree<T>::rbtree(rbtree const& src) : m_root_(new rbtree) {
+    m_root_->parent = src->parent;
+    m_root_->left = src->left;
+    m_root_->right = src->right;
+    m_root_->color = src->color;
+    m_root_->key = src->key;
 }
 
 template <typename T>
 rbtree<T>& rbtree<T>::operator=(rbtree<T> const& rhs) {
     if (this != &rhs) {
-        root->parent = rhs->parent;
-        root->left = rhs->left;
-        root->right = rhs->right;
-        root->color = rhs->color;
-        root->key = rhs->key;
+        m_root_->parent = rhs->parent;
+        m_root_->left = rhs->left;
+        m_root_->right = rhs->right;
+        m_root_->color = rhs->color;
+        m_root_->key = rhs->key;
     }
     return *this;
 }
 
 template <typename T>
 void rbtree<T>::inorder() const {
-    inorderHelper(this->root);
+    inorderHelper(this->m_root_);
     std::cout << std::endl;
 }
 
 template <typename T>
-void rbtree<T>::inorderHelper(rbnode<T>* node) const {
+void rbtree<T>::inorderHelper(rbtNode<T>* node) const {
     if (node == NIL) {
         return;
     }
@@ -103,39 +107,39 @@ void rbtree<T>::inorderHelper(rbnode<T>* node) const {
 
 template <typename T>
 void rbtree<T>::preorder() const {
-    preorderHelper(this->root);
+    preorderHelper(this->m_root_);
     std::cout << std::endl;
 }
 
 template <typename T>
-void rbtree<T>::preorderHelper(rbnode<T>* node) const {
+void rbtree<T>::preorderHelper(rbtNode<T>* node) const {
     if (node == NIL) {
         return;
     }
     std::cout << node->key << " ";
-    inorderHelper(node->left);
-    inorderHelper(node->right);
+    preorderHelper(node->left);
+    preorderHelper(node->right);
 }
 
 template <typename T>
 void rbtree<T>::postorder() const {
-    postorderHelper(this->root);
+    postorderHelper(this->m_root_);
     std::cout << std::endl;
 }
 
 template <typename T>
-void rbtree<T>::postorderHelper(rbnode<T>* node) const {
+void rbtree<T>::postorderHelper(rbtNode<T>* node) const {
     if (node == NIL) {
         return;
     }
-    inorderHelper(node->left);
-    inorderHelper(node->right);
+    postorderHelper(node->left);
+    postorderHelper(node->right);
     std::cout << node->key << " ";
 }
 
 template <typename T>
-rbnode<T>* rbtree<T>::createNewNode(T key) {
-    rbnode<T>* newNode = new rbnode<T>;
+rbtNode<T>* rbtree<T>::createNewNode(T key) {
+    rbtNode<T>* newNode = new rbtNode<T>;
     newNode->parent = NIL;
     newNode->left = NIL;
     newNode->right = NIL;
@@ -145,17 +149,32 @@ rbnode<T>* rbtree<T>::createNewNode(T key) {
 }
 
 template <typename T>
-void rbtree<T>::insertKey(T key) {
-    rbnode<T>* newNode = createNewNode(key);
+void rbtree<T>::deleteAllNode() {
+    deleteAllNodeHelper(this->m_root_);
+}
 
-    if (this->root == NIL) {
+template <typename T>
+void rbtree<T>::deleteAllNodeHelper(rbtNode<T>* node) {
+    if (node == NIL) {
+        return;
+    }
+    deleteAllNodeHelper(node->left);
+    deleteAllNodeHelper(node->right);
+    delete node;
+}
+
+template <typename T>
+void rbtree<T>::insertKey(T key) {
+    rbtNode<T>* newNode = createNewNode(key);
+
+    if (this->m_root_ == NIL) {
         newNode->color = kBLACK;
-        this->root = newNode;
+        this->m_root_ = newNode;
         return;
     }
 
-    rbnode<T>* leaf = NIL;
-    rbnode<T>* root = this->root;
+    rbtNode<T>* leaf = NIL;
+    rbtNode<T>* root = this->m_root_;
 
     while (root != NIL) {
         leaf = root;
