@@ -6,7 +6,7 @@
 /*   By: tayamamo <tayamamo@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/03 12:30:05 by tayamamo          #+#    #+#             */
-/*   Updated: 2021/12/05 03:49:32 by tayamamo         ###   ########.fr       */
+/*   Updated: 2021/12/05 05:29:17 by tayamamo         ###   ########.fr       */
 /* ************************************************************************** */
 
 #ifndef RBTREE_HPP_
@@ -49,7 +49,10 @@ class rbtree {
     void        rotateLeft(rbtNode<T>* node);
     void        rotateRight(rbtNode<T>* node);
     void        fixInsert(rbtNode<T>* newNode);
+    void        deleteKeyHelper(rbtNode<T>* node, T key);
     void        fixDelete(rbtNode<T>* node);
+    void        transplantNode(rbtNode<T>* u, rbtNode<T>* v);
+    rbtNode<T>* minKeyNode(rbtNode<T>* node);
     enum Color  getColor(rbtNode<T>* node) const;
     void        setColor(rbtNode<T>* node, enum Color color);
     rbtNode<T>* getParent(rbtNode<T>* node) const;
@@ -341,6 +344,136 @@ void rbtree<T>::rotateRight(rbtNode<T>* node) {
     }
     left->right = node;
     node->parent = left;
+}
+
+template <typename T>
+void rbtree<T>::deleteKey(T key) {
+    deleteKeyHelper(getRoot(), key);
+}
+
+template <typename T>
+void rbtree<T>::deleteKeyHelper(rbtNode<T>* node, T key) {
+    rbtNode<T>* nodeToBeDeleted = NIL;
+    while (node != NIL) {
+        if (node->key == key) {
+            nodeToBeDeleted = node;
+        }
+        if (node->key <= key) {
+            node = node->right;
+        } else {
+            node = node->left;
+        }
+    }
+
+    if (nodeToBeDeleted == NIL) {
+        return;
+    }
+
+    rbtNode<T>* y = nodeToBeDeleted;
+    rbtNode<T>* x;
+    int         original_color = y->color;
+    if (nodeToBeDeleted->left == NIL) {
+        x = nodeToBeDeleted->right;
+        transplantNode(nodeToBeDeleted, x);
+    } else if (nodeToBeDeleted->right == NIL) {
+        x = nodeToBeDeleted->left;
+        transplantNode(nodeToBeDeleted, x);
+    } else {
+        y = minKeyNode(nodeToBeDeleted->right);
+        original_color = y->color;
+        x = y->right;
+        if (y->parent == nodeToBeDeleted) {
+            x->parent = y;
+        } else {
+            transplantNode(y, y->right);
+            y->right = nodeToBeDeleted->right;
+            y->right->parent = y;
+        }
+        transplantNode(nodeToBeDeleted, y);
+        y->left = nodeToBeDeleted->left;
+        y->left->parent = y;
+        y->color = nodeToBeDeleted->color;
+    }
+    delete nodeToBeDeleted;
+    if (original_color == BLACK) {
+        fixDelete(x);
+    }
+}
+
+template <typename T>
+void rbtree<T>::transplantNode(rbtNode<T>* u, rbtNode<T>* v) {
+    if (u->parent == NULL) {
+        setRoot(v);
+    } else if (u == u->parent->left) {
+        u->parent->left = v;
+    } else {
+        u->parent->right = v;
+    }
+    v->parent = u->parent;
+}
+
+template <typename T>
+void rbtree<T>::fixDelete(rbtNode<T>* x) {
+    while (x != getRoot() && x->color == BLACK) {
+        if (x == x->parent->left) {
+            rbtNode<T>* aunt = x->parent->right;
+            if (aunt->color == RED) {
+                setColor(aunt, BLACK);
+                setColor(x->parent, RED);
+                rotateLeft(x->parent);
+                aunt = x->parent->right;
+            }
+            if (aunt->left->color == BLACK && aunt->right->color == BLACK) {
+                setColor(aunt, RED);
+                x = x->parent;
+            } else {
+                if (aunt->right->color == BLACK) {
+                    setColor(aunt->left, BLACK);
+                    setColor(aunt, RED);
+                    rotateRight(aunt);
+                    aunt = x->parent->right;
+                }
+                setColor(aunt, x->parent->color);
+                setColor(x->parent, BLACK);
+                setColor(aunt->right, BLACK);
+                rotateLeft(x->parent);
+                x = getRoot();
+            }
+        } else if (x == x->parent->right) {
+            rbtNode<T>* aunt = x->parent->left;
+            if (aunt->color == RED) {
+                setColor(aunt, BLACK);
+                setColor(x->parent, RED);
+                rotateRight(x->parent);
+                aunt = x->parent->left;
+            }
+            if (aunt->right->color == BLACK && aunt->right->color == BLACK) {
+                setColor(aunt, RED);
+                x = x->parent;
+            } else {
+                if (aunt->left->color == BLACK) {
+                    setColor(aunt->right, BLACK);
+                    setColor(aunt, RED);
+                    rotateLeft(aunt);
+                    aunt = x->parent->left;
+                }
+                setColor(aunt, x->parent->color);
+                setColor(x->parent, BLACK);
+                setColor(aunt->left, BLACK);
+                rotateRight(x->parent);
+                x = getRoot();
+            }
+        }
+    }
+    setColor(x, BLACK);
+}
+
+template <typename T>
+rbtNode<T>* rbtree<T>::minKeyNode(rbtNode<T>* node) {
+    while (node->left != NIL) {
+        node = node->left;
+    }
+    return node;
 }
 
 }  // namespace ft
