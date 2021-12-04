@@ -6,7 +6,7 @@
 /*   By: tayamamo <tayamamo@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/03 12:30:05 by tayamamo          #+#    #+#             */
-/*   Updated: 2021/12/04 10:53:10 by tayamamo         ###   ########.fr       */
+/*   Updated: 2021/12/04 10:56:56 by tayamamo         ###   ########.fr       */
 /* ************************************************************************** */
 
 #ifndef RBTREE_HPP_
@@ -292,6 +292,9 @@ void rbtree<T>::setRoot(rbtNode<T>* node) {
 
 template <typename T>
 void rbtree<T>::rotateLeft(rbtNode<T>* node) {
+    if (node == NIL) {
+        return;
+    }
     rbtNode<T>* right = node->right;
     node->right = right->left;
     if (node->right != NIL) {
@@ -311,6 +314,9 @@ void rbtree<T>::rotateLeft(rbtNode<T>* node) {
 
 template <typename T>
 void rbtree<T>::rotateRight(rbtNode<T>* node) {
+    if (node == NIL) {
+        return;
+    }
     rbtNode<T>* left = node->left;
     node->left = left->right;
     if (node->left != NIL) {
