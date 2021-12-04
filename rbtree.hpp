@@ -6,7 +6,7 @@
 /*   By: tayamamo <tayamamo@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/03 12:30:05 by tayamamo          #+#    #+#             */
-/*   Updated: 2021/12/04 10:56:56 by tayamamo         ###   ########.fr       */
+/*   Updated: 2021/12/05 03:49:32 by tayamamo         ###   ########.fr       */
 /* ************************************************************************** */
 
 #ifndef RBTREE_HPP_
@@ -17,9 +17,7 @@
 
 namespace ft {
 
-#define NIL NULL
-
-enum Color { kBLACK, kRED };
+enum Color { BLACK, RED };
 
 template <typename T>
 struct rbtNode {
@@ -40,6 +38,7 @@ class rbtree {
 
  private:
     rbtNode<T>* m_root_;
+    rbtNode<T>* NIL;
 
     rbtNode<T>* createNewNode(T key);
     void        deleteAllNode();
@@ -67,11 +66,19 @@ class rbtree {
 };
 
 template <typename T>
-rbtree<T>::rbtree() : m_root_(NIL) {}
+rbtree<T>::rbtree() {
+    NIL = new rbtNode<T>;
+    NIL->parent = NULL;
+    NIL->color = BLACK;
+    NIL->left = NULL;
+    NIL->right = NULL;
+    m_root_ = NIL;
+}
 
 template <typename T>
 rbtree<T>::~rbtree() {
     deleteAllNode();
+    delete NIL;
 }
 
 template <typename T>
@@ -113,6 +120,7 @@ void rbtree<T>::inorderHelper(rbtNode<T>* node) const {
 
 template <typename T>
 void rbtree<T>::preorder() const {
+    std::cout << "pre: ";
     preorderHelper(getRoot());
     std::cout << std::endl;
 }
@@ -146,10 +154,10 @@ void rbtree<T>::postorderHelper(rbtNode<T>* node) const {
 template <typename T>
 rbtNode<T>* rbtree<T>::createNewNode(T key) {
     rbtNode<T>* newNode = new rbtNode<T>;
-    newNode->parent = NIL;
+    newNode->parent = NULL;
     newNode->left = NIL;
     newNode->right = NIL;
-    newNode->color = kRED;
+    newNode->color = RED;
     newNode->key = key;
     return newNode;
 }
@@ -173,29 +181,32 @@ template <typename T>
 void rbtree<T>::insertKey(T key) {
     rbtNode<T>* newNode = createNewNode(key);
 
-    if (getRoot() == NIL) {
-        newNode->color = kBLACK;
-        setRoot(newNode);
-        return;
-    }
-
-    rbtNode<T>* leaf = NIL;
+    rbtNode<T>* leaf = NULL;
     rbtNode<T>* root = getRoot();
-
     while (root != NIL) {
         leaf = root;
-        if (newNode->key > root->key) {
+        if (newNode->key < root->key) {
             root = root->left;
         } else {
             root = root->right;
         }
     }
-    newNode->parent = leaf->parent;
+    newNode->parent = leaf;
 
-    if (leaf->key > newNode->key) {
-        leaf->right = newNode;
-    } else {
+    if (leaf == NULL) {
+        setRoot(newNode);
+    } else if (newNode->key < leaf->key) {
         leaf->left = newNode;
+    } else {
+        leaf->right = newNode;
+    }
+
+    if (getParent(newNode) == NULL) {
+        setColor(newNode, BLACK);
+        return;
+    }
+    if (getGrandParent(newNode) == NULL) {
+        return;
     }
 
     fixInsert(newNode);
@@ -203,62 +214,60 @@ void rbtree<T>::insertKey(T key) {
 
 template <typename T>
 void rbtree<T>::fixInsert(rbtNode<T>* newNode) {
-    rbtNode<T>* parent = NIL;
-    rbtNode<T>* aunt = NIL;
-    rbtNode<T>* grandParent = NIL;
-
-    while (newNode != getRoot() && getColor(getParent(newNode)) == kRED) {
+    rbtNode<T>* parent = NULL;
+    rbtNode<T>* aunt = NULL;
+    rbtNode<T>* grandParent = NULL;
+    while (newNode != getRoot() && getColor(getParent(newNode)) == RED) {
         parent = getParent(newNode);
         grandParent = getGrandParent(newNode);
         if (parent == grandParent->left) {
             aunt = grandParent->right;
-            if (getColor(aunt) == kRED) {
-                setColor(aunt, kBLACK);
-                setColor(parent, kBLACK);
-                setColor(grandParent, kRED);
-                newNode = grandParent;
+            if (aunt->color == RED) {
+                aunt->color = BLACK;
+                newNode->parent->color = BLACK;
+                newNode->parent->parent->color = RED;
+                newNode = newNode->parent->parent;
             } else {
-                if (newNode == parent->right) {
-                    newNode = parent;
+                if (newNode == newNode->parent->right) {
+                    newNode = newNode->parent;
                     rotateLeft(newNode);
                 }
-                setColor(parent, kBLACK);
-                setColor(grandParent, kRED);
-                rotateRight(grandParent);
+                newNode->parent->color = BLACK;
+                newNode->parent->parent->color = RED;
+                rotateRight(newNode->parent->parent);
             }
         } else if (parent == grandParent->right) {
-            aunt = grandParent->left;
-            if (getColor(aunt) == kRED) {
-                setColor(aunt, kBLACK);
-                setColor(parent, kBLACK);
-                setColor(grandParent, kRED);
-                newNode = grandParent;
+            aunt = newNode->parent->parent->left;
+            if (aunt->color == RED) {
+                aunt->color = BLACK;
+                newNode->parent->color = BLACK;
+                newNode->parent->parent->color = RED;
+                newNode = newNode->parent->parent;
             } else {
-                if (newNode == parent->left) {
-                    newNode = parent;
+                if (newNode == newNode->parent->left) {
+                    newNode = newNode->parent;
                     rotateRight(newNode);
                 }
-                setColor(parent, kBLACK);
-                setColor(grandParent, kRED);
-                rotateLeft(newNode);
+                newNode->parent->color = BLACK;
+                newNode->parent->parent->color = RED;
+                rotateLeft(newNode->parent->parent);
             }
         }
     }
-
-    setColor(getRoot(), kBLACK);
+    setColor(getRoot(), BLACK);
 }
 
 template <typename T>
 enum Color rbtree<T>::getColor(rbtNode<T>* node) const {
-    if (node == NIL) {
-        return kBLACK;
+    if (node == NULL) {
+        return BLACK;
     }
     return node->color;
 }
 
 template <typename T>
 void rbtree<T>::setColor(rbtNode<T>* node, enum Color color) {
-    if (node == NIL) {
+    if (node == NULL) {
         return;
     }
     node->color = color;
@@ -266,16 +275,16 @@ void rbtree<T>::setColor(rbtNode<T>* node, enum Color color) {
 
 template <typename T>
 rbtNode<T>* rbtree<T>::getParent(rbtNode<T>* node) const {
-    if (node == NIL) {
-        return NIL;
+    if (node == NULL) {
+        return NULL;
     }
     return node->parent;
 }
 
 template <typename T>
 rbtNode<T>* rbtree<T>::getGrandParent(rbtNode<T>* node) const {
-    if (node == NIL || node->parent == NIL) {
-        return NIL;
+    if (node == NULL || node->parent == NULL) {
+        return NULL;
     }
     return node->parent->parent;
 }
@@ -292,7 +301,7 @@ void rbtree<T>::setRoot(rbtNode<T>* node) {
 
 template <typename T>
 void rbtree<T>::rotateLeft(rbtNode<T>* node) {
-    if (node == NIL) {
+    if (node == NULL) {
         return;
     }
     rbtNode<T>* right = node->right;
@@ -301,7 +310,7 @@ void rbtree<T>::rotateLeft(rbtNode<T>* node) {
         node->right->parent = node;
     }
     right->parent = node->parent;
-    if (node->parent == NIL) {
+    if (node->parent == NULL) {
         setRoot(right);
     } else if (node == node->parent->left) {
         node->parent->left = right;
@@ -314,7 +323,7 @@ void rbtree<T>::rotateLeft(rbtNode<T>* node) {
 
 template <typename T>
 void rbtree<T>::rotateRight(rbtNode<T>* node) {
-    if (node == NIL) {
+    if (node == NULL) {
         return;
     }
     rbtNode<T>* left = node->left;
@@ -323,12 +332,12 @@ void rbtree<T>::rotateRight(rbtNode<T>* node) {
         node->left->parent = node;
     }
     left->parent = node->parent;
-    if (node->parent == NIL) {
+    if (node->parent == NULL) {
         setRoot(left);
-    } else if (node == node->parent->left) {
-        node->parent->left = left;
-    } else {
+    } else if (node == node->parent->right) {
         node->parent->right = left;
+    } else {
+        node->parent->left = left;
     }
     left->right = node;
     node->parent = left;
