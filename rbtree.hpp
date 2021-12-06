@@ -6,7 +6,7 @@
 /*   By: tayamamo <tayamamo@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/03 12:30:05 by tayamamo          #+#    #+#             */
-/*   Updated: 2021/12/05 05:29:17 by tayamamo         ###   ########.fr       */
+/*   Updated: 2021/12/06 11:23:06 by tayamamo         ###   ########.fr       */
 /* ************************************************************************** */
 
 #ifndef RBTREE_HPP_
@@ -53,6 +53,7 @@ class rbtree {
     void        fixDelete(rbtNode<T>* node);
     void        transplantNode(rbtNode<T>* u, rbtNode<T>* v);
     rbtNode<T>* minKeyNode(rbtNode<T>* node);
+    rbtNode<T>* maxKeyNode(rbtNode<T>* node);
     enum Color  getColor(rbtNode<T>* node) const;
     void        setColor(rbtNode<T>* node, enum Color color);
     rbtNode<T>* getParent(rbtNode<T>* node) const;
@@ -472,6 +473,14 @@ template <typename T>
 rbtNode<T>* rbtree<T>::minKeyNode(rbtNode<T>* node) {
     while (node->left != NIL) {
         node = node->left;
+    }
+    return node;
+}
+
+template <typename T>
+rbtNode<T>* rbtree<T>::maxKeyNode(rbtNode<T>* node) {
+    while (node->right != NIL) {
+        node = node->right;
     }
     return node;
 }
