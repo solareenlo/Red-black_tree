@@ -6,7 +6,7 @@
 /*   By: tayamamo <tayamamo@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/03 12:30:05 by tayamamo          #+#    #+#             */
-/*   Updated: 2021/12/06 11:23:06 by tayamamo         ###   ########.fr       */
+/*   Updated: 2021/12/11 18:20:17 by tayamamo         ###   ########.fr       */
 /* ************************************************************************** */
 
 #ifndef RBTREE_HPP_
@@ -48,9 +48,9 @@ class rbtree {
     void        postorderHelper(rbtNode<T>* node) const;
     void        rotateLeft(rbtNode<T>* node);
     void        rotateRight(rbtNode<T>* node);
-    void        fixInsert(rbtNode<T>* newNode);
+    void        balanceAfterInsert(rbtNode<T>* newNode);
     void        deleteKeyHelper(rbtNode<T>* node, T key);
-    void        fixDelete(rbtNode<T>* node);
+    void        balanceAfterDelete(rbtNode<T>* node);
     void        transplantNode(rbtNode<T>* u, rbtNode<T>* v);
     rbtNode<T>* minKeyNode(rbtNode<T>* node);
     rbtNode<T>* maxKeyNode(rbtNode<T>* node);
@@ -213,11 +213,11 @@ void rbtree<T>::insertKey(T key) {
         return;
     }
 
-    fixInsert(newNode);
+    balanceAfterInsert(newNode);
 }
 
 template <typename T>
-void rbtree<T>::fixInsert(rbtNode<T>* newNode) {
+void rbtree<T>::balanceAfterInsert(rbtNode<T>* newNode) {
     rbtNode<T>* parent = NULL;
     rbtNode<T>* aunt = NULL;
     rbtNode<T>* grandParent = NULL;
@@ -397,7 +397,7 @@ void rbtree<T>::deleteKeyHelper(rbtNode<T>* node, T key) {
     }
     delete nodeToBeDeleted;
     if (original_color == BLACK) {
-        fixDelete(x);
+        balanceAfterDelete(x);
     }
 }
 
@@ -414,7 +414,7 @@ void rbtree<T>::transplantNode(rbtNode<T>* u, rbtNode<T>* v) {
 }
 
 template <typename T>
-void rbtree<T>::fixDelete(rbtNode<T>* x) {
+void rbtree<T>::balanceAfterDelete(rbtNode<T>* x) {
     while (x != getRoot() && x->color == BLACK) {
         if (x == x->parent->left) {
             rbtNode<T>* aunt = x->parent->right;
@@ -448,7 +448,7 @@ void rbtree<T>::fixDelete(rbtNode<T>* x) {
                 rotateRight(x->parent);
                 aunt = x->parent->left;
             }
-            if (aunt->right->color == BLACK && aunt->right->color == BLACK) {
+            if (aunt->right->color == BLACK) {
                 setColor(aunt, RED);
                 x = x->parent;
             } else {
